@@ -93,13 +93,12 @@ class JenkinsPi(object):
 	def start(self):
 		self.running = True
 		
-		multitask.add(self._background_task())
-		multitask.run()
+		self._background_task()
 
 	# TODO: add the way to stop...
 	
 	def _background_task(self):
-		self.indicator.start()
+		#self.indicator.start()
 
 		while self.running:
 			tasks = self.J.keys()
@@ -138,8 +137,6 @@ class JenkinsPi(object):
 				self.indicator.set_mode("blink")
 
 				print ("no project")
-
-		yield self
 
 
 
