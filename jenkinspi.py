@@ -58,8 +58,7 @@ class JenkinsPi(object):
 	"""JenkinsPi"""
 	def __init__(self, server_url, red_port, blue_port):
 		self.indicator = Indicator(red_port=red_port, blue_port=blue_port)
-
-		self.J = Jenkins(server_url)
+		self.server_url = server_url
 
 	def start(self):
 		self.running = True
@@ -71,19 +70,22 @@ class JenkinsPi(object):
 	def _background_task(self):
 
 		while self.running:
-			tasks = self.J.keys()
+			J = Jenkins(self.server_url)
+			tasks = J.keys()
 			if len(tasks) >0:
 				has_failed_task = False
 				has_building_task = False
 
 				for task in tasks:
-					build = self.J[task].get_last_build()
+					build = J[task].get_last_build()
 
 					if not build.is_good():
 						has_failed_task = True
+						print('failed:', task)
 
 					if build.is_running():
 						has_building_task = True
+						print('building', task)
 
 				# priority: "Building" > "Failed" > "Normal"
 				if has_building_task:
