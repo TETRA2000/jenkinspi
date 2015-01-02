@@ -45,7 +45,7 @@ class Indicator(object):
 			GPIO.output(led, 1)
 
 			t0 = time.time()
-			while time.time - t0 < duration:
+			while time.time() - t0 < duration:
 				if mode == 'blink':
 					GPIO.output(led, 0)
 					time.sleep(Indicator.BLINK_INTERVAL)
