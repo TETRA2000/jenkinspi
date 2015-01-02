@@ -49,7 +49,7 @@ class Indicator(object):
 		time.sleep(1)
 
 		self.running = True
-		multitask.add(self._flash_in_background)
+		multitask.add(self._flash_in_background())
 
 
 	def stop(self):
@@ -83,7 +83,7 @@ class JenkinsPi(object):
 
 		self.running = True
 		
-		multitask.add(self._background_task)
+		multitask.add(self._background_task())
 		multitask.run()
 
 	# TODO: add the way to stop...
@@ -96,7 +96,7 @@ class JenkinsPi(object):
 				has_building_task = False
 
 				for task in tasks:
-					build = J[task].get_latest_build()
+					build = self.J[task].get_latest_build()
 
 					if not build.is_good():
 						has_failed_task = True
@@ -120,7 +120,7 @@ class JenkinsPi(object):
 				self.indicator.set_color('blue')
 				self.indicator.set_mode("blink")
 
-		yield
+		yield self
 
 
 
