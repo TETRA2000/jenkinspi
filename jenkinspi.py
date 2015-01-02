@@ -27,20 +27,22 @@ class Indicator(object):
 		self.red_port	= red_port
 		self.blue_port	= blue_port
 
+		self._init_GPIO()
+
 	def _init_GPIO(self):
 		GPIO.setmode(GPIO.BOARD)
-		GPIO.setup(red_port, GPIO.OUT)
-		GPIO.setup(blue_port, GPIO.OUT)
+		GPIO.setup(self.red_port, GPIO.OUT)
+		GPIO.setup(self.blue_port, GPIO.OUT)
 
 	def _cleanup_GPIO(self):
 		GPIO.cleanup()
 
 	def set_mode(self, mode):
-		if mode.lower() in MODE:
+		if mode.lower() in Indicator.MODE:
 			self.mode = mode.lower()
 
 	def set_color(self, color):
-		if color.lower() in COLOR:
+		if color.lower() in Indicator.COLOR:
 			self.color = color.lower()
 
 	def start(self):
@@ -50,19 +52,26 @@ class Indicator(object):
 
 		self.running = True
 		multitask.add(self._flash_in_background())
+		multitask.run()
 
 
 	def stop(self):
-		self.running = False
-
-		self._cleanup_GPIO()
+		if self.running:
+			self.running = False
+			self._cleanup_GPIO()
 
 	def _flash_in_background(self):
 		while self.running:
+			# turn off all LEDs
+			GPIO.output(self.red_port, 0)
+			GPIO.output(self.blue_port, 0)
+
+			# print("LED color=",self.color, "mode=",self.mode)
+
 			if self.color == 'red':
-				led = red_port
+				led = self.red_port
 			else:
-				led = blue_port
+				led = self.blue_port
 
 			GPIO.output(led, 1)
 
@@ -78,6 +87,7 @@ class JenkinsPi(object):
 	"""JenkinsPi"""
 	def __init__(self, server_url, red_port, blue_port):
 		self.indicator = Indicator(red_port=red_port, blue_port=blue_port)
+		self.indicator.start()
 
 		self.J = Jenkins(server_url)
 
@@ -96,7 +106,7 @@ class JenkinsPi(object):
 				has_building_task = False
 
 				for task in tasks:
-					build = self.J[task].get_latest_build()
+					build = self.J[task].get_last_build()
 
 					if not build.is_good():
 						has_failed_task = True
