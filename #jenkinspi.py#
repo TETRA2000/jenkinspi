@@ -32,7 +32,7 @@ class Indicator(object):
 	def _init_GPIO(self):
 		GPIO.setmode(GPIO.BOARD)
 		GPIO.setup(self.red_port, GPIO.OUT)
-		GPIO.setup(self.blue_port, GPIO.OUT)
+a		GPIO.setup(self.blue_port, GPIO.OUT)
 
 	def _cleanup_GPIO(self):
 		GPIO.cleanup()
@@ -87,10 +87,10 @@ class JenkinsPi(object):
 	"""JenkinsPi"""
 	def __init__(self, server_url, red_port, blue_port):
 		self.indicator = Indicator(red_port=red_port, blue_port=blue_port)
+		self.indicator.start()
 
 		self.J = Jenkins(server_url)
 
-	def start(self):
 		self.running = True
 		
 		multitask.add(self._background_task())
@@ -99,8 +99,6 @@ class JenkinsPi(object):
 	# TODO: add the way to stop...
 	
 	def _background_task(self):
-		self.indicator.start()
-
 		while self.running:
 			tasks = self.J.keys()
 			if len(tasks) >0:
