@@ -3,12 +3,13 @@
 
 import time
 import RPi.GPIO as GPIO
-import multitask
 import jenkinsapi
 from jenkinsapi.jenkins import Jenkins
 
 class Indicator(object):
 	""" LED indicator """
+
+	BLINK_INTERVAL = 1
 
 	# flash mode
 	MODE = ['continus', 'blink']
@@ -27,61 +28,31 @@ class Indicator(object):
 		self.red_port	= red_port
 		self.blue_port	= blue_port
 
-		self._init_GPIO()
-
-	def _init_GPIO(self):
 		GPIO.setmode(GPIO.BOARD)
 		GPIO.setup(self.red_port, GPIO.OUT)
 		GPIO.setup(self.blue_port, GPIO.OUT)
 
-	def _cleanup_GPIO(self):
-		GPIO.cleanup()
-
-	def set_mode(self, mode):
-		if mode.lower() in Indicator.MODE:
-			self.mode = mode.lower()
-
-	def set_color(self, color):
-		if color.lower() in Indicator.COLOR:
-			self.color = color.lower()
-
-	def start(self):
-		# stop last running
-		self.stop()
-		time.sleep(1)
-
-		self.running = True
-		multitask.add(self._flash_in_background())
-		multitask.run()
-
-
-	def stop(self):
-		if self.running:
-			self.running = False
-			self._cleanup_GPIO()
-
-	def _flash_in_background(self):
-		while self.running:
+	def flash(self, mode='continus', color='blue', duration=10):
 			# turn off all LEDs
 			GPIO.output(self.red_port, 0)
 			GPIO.output(self.blue_port, 0)
 
-			# print("LED color=",self.color, "mode=",self.mode)
-
-			if self.color == 'red':
+			if color == 'red':
 				led = self.red_port
 			else:
 				led = self.blue_port
 
 			GPIO.output(led, 1)
 
-			if self.mode == 'blink':
-				# turn off while...
-				GPIO.output(led, 1)
-				time.sleep(0.75)
+			t0 = time.time()
+			while time.time - t0 < duration:
+				if mode == 'blink':
+					GPIO.output(led, 0)
+					time.sleep(Indicator.BLINK_INTERVAL)
+					GPIO.output(led, 1)
+				else:
+					time.sleep(1)
 
-			GPIO.output(led, 0)
-			yield
 
 class JenkinsPi(object):
 	"""JenkinsPi"""
@@ -98,7 +69,6 @@ class JenkinsPi(object):
 	# TODO: add the way to stop...
 	
 	def _background_task(self):
-		#self.indicator.start()
 
 		while self.running:
 			tasks = self.J.keys()
@@ -117,24 +87,20 @@ class JenkinsPi(object):
 
 				# priority: "Building" > "Failed" > "Normal"
 				if has_building_task:
-					self.indicator.set_color('blue')
-					self.indicator.set_mode("blink")
+					self.indicator.flash(mode='blink', color='blue', duration=10)
 					print("building...")
 				elif has_failed_task:
-					self.indicator.set_color('red')
-					self.indicator.set_mode("continus")
+					self.indicator.flash(mode='continus', color='red', duration=10)
 
 					print("failed")
 				else: # Normal
-					self.indicator.set_color('blue')
-					self.indicator.set_mode("continus")
+					self.indicator.flash(mode='continus', color='blue', duration=10)
 
 					print("normal")
 
 			else:
 				# no projects add something!!
-				self.indicator.set_color('blue')
-				self.indicator.set_mode("blink")
+				self.indicator.flash(mode='blink', color='red', duration=10)
 
 				print ("no project")
 
